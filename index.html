@@ -1622,7 +1622,7 @@ function beginRace(){
   state.parkGate=(Math.floor(state.laps)+1)*track.perim;   /* 완주 후 이 지점(게이트) 지나면 퇴장 */
   state.t=0; state.raceTime=0; state.started=false;
   state.finishedCount=0; state.results=[]; state.afterFinish=0; state.podiumT=0; state.confirmed=0;
-  state.lastLeader=0; state.lapFlags={}; state.stretchCalled=false; state.bellDone=false;
+  state.lastLeader=0; state.lapFlags={}; state.stretchCalled=false; state.bellDone=false; state.hushT=0;
   state.caption={text:'',timer:0};
   state.flash=0; state.shutter=0;
   state.retiredCount=0; state.retireSeq=0; state.dustPuffs=[];
@@ -1734,9 +1734,11 @@ function updateRace(dt){
       v.fallen=true; v.fallT=state.raceTime;
       state.incident=null;
       fallSound();
+      state.hushT=state.raceTime;   /* 낙마 직후 약 1.8초 함성 죽임 (crescendo 로직이 유지) */
+      crowdSet(0.06,0.25);
+      playGasp(1);                  /* 관중 놀라는 효과음 */
       cap(`⚠️ ${v.lane}번 ${v.name} 낙마! 아찔한 순간입니다!`,`⚠️ ${laneNo(v.lane)} ${v.name} has fallen! A scary moment!`);
       speak(`Oh no! Number ${v.lane} has gone down! A terrible fall!`,{rate:1.1,pitch:0.86});
-      crowdLevel(0.15);   /* 관중 술렁 */
     }
   }
   hs.forEach(h=>{
@@ -1838,9 +1840,12 @@ function updateRace(dt){
 
   /* 관중 함성: 결승 한 바퀴 전부터 남은 거리에 비례해 점점 커진다 */
   if(state.finishedCount===0){
+    const hushing = state.hushT && (state.raceTime-state.hushT)<1.8;   /* 낙마 직후 함성 죽임 */
     const remainLead=state.finishDist-order[0].dist;
     const base=0.34;
-    if(remainLead<track.perim){
+    if(hushing){
+      crowdLevel(0.06);
+    } else if(remainLead<track.perim){
       const u=clamp(1-remainLead/track.perim,0,1);   /* 0(1바퀴 전)→1(결승선) */
       crowdLevel(base + Math.pow(u,1.6)*0.55);        /* 최대 ~0.9 */
       /* 마지막 1바퀴 진입 → 약 5초간 빠른 종소리 */
@@ -2380,13 +2385,20 @@ function shutterSound(){
 let crowdLoopEl=null, crowdCheerEl=null;
 let crowdCurV=0, crowdTargetV=0, crowdRampRate=1, crowdTweenRAF=null, crowdPlaying=false;
 const CROWD_MAX=0.9;
-let fanfareEl=null, bellEl=null;
+let fanfareEl=null, bellEl=null, gaspEl=null;
 function crowdPreload(){
   if(crowdLoopEl) return;
   crowdLoopEl=new Audio('crowd_loop.mp3'); crowdLoopEl.loop=true; crowdLoopEl.preload='auto'; crowdLoopEl.volume=0;
   crowdCheerEl=new Audio('crowd_cheer.mp3'); crowdCheerEl.preload='auto';
   fanfareEl=new Audio('fanfare.mp3'); fanfareEl.preload='auto';
   bellEl=new Audio('bell.mp3'); bellEl.preload='auto';
+  gaspEl=new Audio('gasp.mp3'); gaspEl.preload='auto';
+}
+/* 낙마 순간 놀라는 효과음 */
+function playGasp(vol=1){
+  crowdPreload();
+  try{ gaspEl.currentTime=0; gaspEl.volume=clamp(vol,0,1);
+    const pr=gaspEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){}
 }
 /* 출발 전 팡파르 */
 function playFanfare(vol=0.9){
