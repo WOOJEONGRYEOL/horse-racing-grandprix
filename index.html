@@ -31,8 +31,8 @@
 
   /* ------- Start hero ------- */
   #screen-start{padding:0; align-items:stretch;}
-  #heroWrap{position:relative; flex:1; min-height:0; overflow:hidden;}
-  #heroArt{width:100%; height:100%; display:block;}
+  #heroWrap{position:relative; flex:1; min-height:0; overflow:hidden; background:#0a2c19;}
+  #heroArt{width:100%; height:100%; display:block; object-fit:cover;}
   #heroOverlay{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
     padding:8px 24px 22px; text-align:center;
     background:linear-gradient(180deg, rgba(8,20,12,0) 38%, rgba(8,20,12,.35) 68%, rgba(6,16,10,.72) 100%);}
@@ -289,7 +289,7 @@
       <button class="langbtn" data-l="en" onclick="setLang('en')">English</button>
     </div>
     <div id="heroWrap">
-      <canvas id="heroArt"></canvas>
+      <img id="heroArt" src="hero.jpg" alt="">
       <div id="heroOverlay">
         <div class="sub" id="tSubtitle">Retro Turf Presents</div>
         <h1 id="tTitle">🏇 경마 그랑프리</h1>
@@ -515,6 +515,9 @@ function loadHeroPhoto(){
   img.src=HERO_PHOTO_URL;
 }
 function drawHeroArt(){
+  /* 메인 배경은 순수 사진(<img id="heroArt">)으로 표시한다. 캔버스 일러스트는 사용 안 함. */
+  return;
+  /* eslint-disable no-unreachable */
   const cv=document.getElementById('heroArt'); if(!cv) return;
   const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return;
   const dpr=window.devicePixelRatio||1;
