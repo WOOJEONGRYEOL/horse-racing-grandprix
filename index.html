@@ -12,7 +12,7 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; height:100%;}
   body{
-    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    font-family:"Trebuchet MS","Segoe UI",system-ui,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;
     background:radial-gradient(1200px 600px at 50% -10%, #14713b 0%, var(--felt) 45%, var(--felt2) 100%);
     color:#f4f7e8; display:flex; align-items:center; justify-content:center;
     min-height:100%; overflow:hidden; user-select:none;
@@ -184,6 +184,10 @@
   .lcoat{width:13px; height:13px; border-radius:3px; flex:none;}
   .broke{color:var(--red); font-weight:800; margin-top:8px;}
   .credits{position:absolute; bottom:8px; width:100%; text-align:center; font-size:11px; opacity:.45;}
+  /* 인라인 코인 아이콘 (<span class="cn"></span> 이모지 대체 — 윈도우 등 모든 환경에서 항상 렌더) */
+  .cn{display:inline-block; width:.85em; height:.85em; border-radius:50%; vertical-align:-.08em; margin:0 .05em;
+    background:radial-gradient(circle at 35% 30%, #ffe98a, #f4c430 55%, #b9860f);
+    box-shadow:inset 0 0 0 1px rgba(120,80,10,.55);}
   .coin{position:absolute; top:-10px; width:16px; height:16px; border-radius:50%; pointer-events:none; z-index:5;
     background:radial-gradient(circle at 35% 30%, #ffe98a, #f4c430 55%, #b9860f);
     box-shadow:inset 0 0 0 1.5px rgba(185,134,15,.8);
@@ -479,7 +483,7 @@ function renderLeaderboard(){
       <span class="lbrk">${medal}</span>
       <span class="lbnick">${s.nick}</span>
       <span class="lbmeta">${s.races} ${t('races')}</span>
-      <span class="lbamt">${s.peak.toLocaleString()}🪙</span></div>`;
+      <span class="lbamt">${s.peak.toLocaleString()}<span class="cn"></span></span></div>`;
   }).join('');
 }
 function setLang(l){
@@ -1275,7 +1279,7 @@ function renderWallets(){
   const w=document.getElementById('wallets'); w.innerHTML='';
   for(let p=0;p<state.players;p++){
     const d=document.createElement('div'); d.className='wallet '+(p===0?'p1':'p2');
-    d.innerHTML=`<small>${state.players===1?t('coins'):t('player')+' '+(p+1)}</small>${state.money[p].toLocaleString()} 🪙`;
+    d.innerHTML=`<small>${state.players===1?t('coins'):t('player')+' '+(p+1)}</small>${state.money[p].toLocaleString()} <span class="cn"></span>`;
     w.appendChild(d);
   }
 }
@@ -1436,7 +1440,7 @@ function renderBetbar(popFor=-1){
     const tag=state.players===2? `<span class="tag ${p===0?'p1':'p2'}">P${p+1}</span>` : `<span class="tag p1">${t('myTicket')}</span>`;
     const row=document.createElement('div'); row.className='betrow';
     if(b && b.locked){
-      row.innerHTML=`${tag}<span class="pickinfo">✅ <b>${betName(b.type)}</b> · ${selLabel(b)} · ${b.stake.toLocaleString()}🪙 × ${b.odds.toFixed(1)} = ${t('payoutIf')} <b style="color:var(--gold)">${Math.round(b.stake*b.odds).toLocaleString()}🪙</b></span>
+      row.innerHTML=`${tag}<span class="pickinfo">✅ <b>${betName(b.type)}</b> · ${selLabel(b)} · ${b.stake.toLocaleString()}<span class="cn"></span> × ${b.odds.toFixed(1)} = ${t('payoutIf')} <b style="color:var(--gold)">${Math.round(b.stake*b.odds).toLocaleString()}<span class="cn"></span></b></span>
         <button class="chip" onclick="unlock(${p})">${t('edit')}</button>`;
       bar.appendChild(row); continue;
     }
@@ -1449,7 +1453,7 @@ function renderBetbar(popFor=-1){
     row.innerHTML=`${tag}${typeChips}
       <span class="pickinfo">${b? selLabel(b):t('selectHorse')}${oddsTxt}</span>
       <button class="chip" onclick="bump(${p},-100)">-100</button>
-      <span class="stake${popFor===p?' pop':''}">${cur.stake.toLocaleString()}🪙</span>
+      <span class="stake${popFor===p?' pop':''}">${cur.stake.toLocaleString()}<span class="cn"></span></span>
       <button class="chip" onclick="bump(${p},100)">+100</button>
       <button class="chip" onclick="bump(${p},500)">+500</button>
       <button class="chip" onclick="allin(${p})">${t('allIn')}</button>
@@ -1525,8 +1529,8 @@ function ticketHTML(b,p){
       <div class="trow"><span>${t('raceR')}${state.round} · ${state.raceMeters}m</span><span>${state.players===2?t('player')+' '+(p+1):t('counter')}</span></div>
       <div class="trow big"><span>${betName(b.type)}</span><span>${selLabel(b)}</span></div>
       <div class="trow"><span>${t('odds')}</span><span>× ${b.odds.toFixed(1)}</span></div>
-      <div class="trow"><span>${t('buyAmt')}</span><span>${b.stake.toLocaleString()} 🪙</span></div>
-      <div class="trow big"><span>${t('winReturn')}</span><span>${Math.round(b.stake*b.odds).toLocaleString()} 🪙</span></div>
+      <div class="trow"><span>${t('buyAmt')}</span><span>${b.stake.toLocaleString()} <span class="cn"></span></span></div>
+      <div class="trow big"><span>${t('winReturn')}</span><span>${Math.round(b.stake*b.odds).toLocaleString()} <span class="cn"></span></span></div>
       <div class="tbar"></div>
       <div class="serial">NO.${serial} · GRAND TURF CLUB</div>`;
 }
@@ -1562,7 +1566,7 @@ function renderMiniTickets(){
     d.className='mticket '+(p===0?'mp1':'mp2');
     const pTag=state.players===2
       ?`<span class="mpTag ${p===0?'mp1t':'mp2t'}">P${p+1}</span> `:'🎫 ';
-    d.innerHTML=`${pTag}${betName(b.type)} ${b.sel.map(laneNo).join('·')} ×${b.odds.toFixed(1)} · ${b.stake.toLocaleString()}🪙`;
+    d.innerHTML=`${pTag}${betName(b.type)} ${b.sel.map(laneNo).join('·')} ×${b.odds.toFixed(1)} · ${b.stake.toLocaleString()}<span class="cn"></span>`;
     d.onclick=()=>{
       const z=document.getElementById('ticketZoom');
       z.innerHTML=`<div class="ticket">${ticketHTML(b,p)}</div>`;
@@ -2544,12 +2548,12 @@ function photoLoop(){
 }
 
 /* ============================ 코인 애니메이션 ============================ */
-function tweenNumber(el,from,to,dur=1000,suffix=' 🪙'){
+function tweenNumber(el,from,to,dur=1000,suffix=' <span class="cn"></span>'){
   const t0=performance.now();
   function f(t){
     const k=Math.min(1,(t-t0)/dur);
     const e=1-Math.pow(1-k,3);
-    el.textContent=Math.round(from+(to-from)*e).toLocaleString()+suffix;
+    el.innerHTML=Math.round(from+(to-from)*e).toLocaleString()+suffix;
     if(k<1) requestAnimationFrame(f);
   }
   requestAnimationFrame(f);
@@ -2611,7 +2615,7 @@ function finishRace(){
     if(won){
       const payout=Math.round(b.stake*b.odds);
       state.money[p]+=payout;
-      lines.push({p,won:true,text:`${betName(b.type)} ${t('hit')} ${selLabel(b)} · ${b.stake.toLocaleString()}🪙 × ${b.odds.toFixed(1)}`,delta:payout});
+      lines.push({p,won:true,text:`${betName(b.type)} ${t('hit')} ${selLabel(b)} · ${b.stake.toLocaleString()}<span class="cn"></span> × ${b.odds.toFixed(1)}`,delta:payout});
     } else {
       lines.push({p,won:false,text:`${betName(b.type)} ${t('miss')} · ${selLabel(b)}`,delta:-b.stake,stake:b.stake});
     }
@@ -2650,12 +2654,12 @@ function finishRace(){
   html+=lines.map((l,i)=>{
     const who=state.players===2? `<b style="color:${l.p===0?'var(--p1)':'var(--p2)'}">P${l.p+1}</b>` : '';
     if(l.delta===0) return `<div class="payline">${who}<span>${l.text}</span><span style="opacity:.6">±0</span></div>`;
-    if(l.won) return `<div class="payline">${who}<span>${l.text}</span><b class="pos" id="payval-${i}">+0 🪙</b></div>`;
-    return `<div class="payline lose">${who}<span>${l.text}</span><b class="neg">-${l.stake.toLocaleString()}🪙</b></div>`;
+    if(l.won) return `<div class="payline">${who}<span>${l.text}</span><b class="pos" id="payval-${i}">+0 <span class="cn"></span></b></div>`;
+    return `<div class="payline lose">${who}<span>${l.text}</span><b class="neg">-${l.stake.toLocaleString()}<span class="cn"></span></b></div>`;
   }).join('');
 
   html+=`<div style="margin-top:12px" class="row">`+[...Array(state.players).keys()].map(p=>
-    `<div class="wallet ${p===0?'p1':'p2'}" id="rwallet-${p}"><small>${state.players===2?t('player')+' '+(p+1):t('coins')}</small><span id="rwalletv-${p}">${before[p].toLocaleString()} 🪙</span></div>`
+    `<div class="wallet ${p===0?'p1':'p2'}" id="rwallet-${p}"><small>${state.players===2?t('player')+' '+(p+1):t('coins')}</small><span id="rwalletv-${p}">${before[p].toLocaleString()} <span class="cn"></span></span></div>`
   ).join('')+`</div>`;
 
   const broke=state.money.slice(0,state.players).every(m=>m<100);
@@ -2700,7 +2704,7 @@ function finishRace(){
     if(el){ setTimeout(()=>{
       const t0=performance.now();
       (function f(t){ const k=Math.min(1,(t-t0)/1100); const e=1-Math.pow(1-k,3);
-        el.textContent='+'+Math.round(l.delta*e).toLocaleString()+' 🪙';
+        el.innerHTML='+'+Math.round(l.delta*e).toLocaleString()+' <span class="cn"></span>';
         if(k<1) requestAnimationFrame(f); })(t0);
     },350); }
   });
