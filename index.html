@@ -23,9 +23,11 @@
     background:linear-gradient(180deg,#0d3a20,#0a2c19);}
   .screen{position:absolute; inset:0; display:none; flex-direction:column;}
   .screen.active{display:flex;}
-  h1{font-size:46px; margin:0; letter-spacing:1px;
-    background:linear-gradient(180deg,#fff3b0,var(--gold) 60%,#c98a12);
-    -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:900;}
+  h1{font-size:46px; margin:0; letter-spacing:1px; font-weight:900;
+    display:inline-flex; align-items:center; justify-content:center; gap:.12em;}
+  .gtxt{background:linear-gradient(180deg,#fff3b0,var(--gold) 60%,#c98a12);
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  #titleHorse{height:1.1em; width:1.7em; display:block; flex:none;}
   .sub{color:#bfe6c9; letter-spacing:3px; font-size:13px; text-transform:uppercase;}
   .center{align-items:center; justify-content:center; gap:20px; text-align:center; padding:24px;}
 
@@ -296,7 +298,7 @@
       <img id="heroArt" src="hero.jpg" alt="">
       <div id="heroOverlay">
         <div class="sub" id="tSubtitle">Retro Turf Presents</div>
-        <h1 id="tTitle">🏇 경마 그랑프리</h1>
+        <h1><canvas id="titleHorse" width="140" height="90"></canvas><span class="gtxt" id="tTitle">경마 그랑프리</span></h1>
       </div>
     </div>
     <div id="startFooter">
@@ -392,7 +394,7 @@ const RACE_TYPES=[
 /* ============================ 다국어 문자열 ============================ */
 const I18N = {
   ko:{
-    subtitle:"Retro Turf Presents", title:"🏇 경마 그랑프리",
+    subtitle:"Retro Turf Presents", title:"경마 그랑프리",
     p1:"1인 플레이", p2:"2인 대전", startHint:"시작 자금: 각 플레이어 1,000 코인 · 마우스/터치로 즐기세요",
     coins:"보유 코인", player:"PLAYER", myTicket:"내 마권",
     selectHorse:"말을 선택하세요 👆", oneMore:"(+1마리 더)", first:"1착→", second:"2착→",
@@ -409,7 +411,7 @@ const I18N = {
     skipResult:"결과 보기 ⏭",
   },
   en:{
-    subtitle:"Retro Turf Presents", title:"🏇 Grand Turf Racing",
+    subtitle:"Retro Turf Presents", title:"Grand Turf Racing",
     p1:"1 Player", p2:"2 Players", startHint:"Starting funds: 1,000 coins each · Play with mouse/touch",
     coins:"Balance", player:"PLAYER", myTicket:"My Ticket",
     selectHorse:"Select a horse 👆", oneMore:"(+1 more)", first:"1st→", second:"2nd→",
@@ -497,9 +499,24 @@ function applyStartTexts(){
   set('tSubtitle',t('subtitle')); set('tTitle',t('title'));
   set('tP1',t('p1')); set('tP2',t('p2')); set('tStartHint',t('startHint'));
   document.documentElement.lang=state.lang;
+  drawTitleHorse();
+}
+/* 타이틀의 금색 말 (이모지 대신 게임 스프라이트로 직접 렌더 → 모든 브라우저에서 표시) */
+function drawTitleHorse(){
+  const cv=document.getElementById('titleHorse'); if(!cv) return;
+  const w=cv.clientWidth||70, h=cv.clientHeight||46; if(!w||!h) return;
+  const dpr=window.devicePixelRatio||1;
+  cv.width=w*dpr; cv.height=h*dpr;
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+  const gold={coat:'#eab63a', color:'#a9760c', pattern:'solid', style:'front', lane:'', whip:false};
+  g.save(); g.translate(w*0.5, h*0.64);
+  drawHorseSprite(g, gold, w/80, 0.22, {running:false});
+  g.restore();
 }
 try{ const sv=localStorage.getItem('turf_lang'); if(sv) state.lang=sv; }catch(e){}
 window.addEventListener('load',applyStartTexts);
+window.addEventListener('resize',()=>{ if(document.getElementById('screen-start').classList.contains('active')) drawTitleHorse(); });
 function pick(arr,k){ const c=[...arr]; const out=[]; for(let i=0;i<k;i++) out.push(c.splice(Math.floor(Math.random()*c.length),1)[0]); return out; }
 function shade(hex,amt){ const n=parseInt(hex.slice(1),16);
   const r=Math.max(0,Math.min(255,(n>>16)+amt)), g=Math.max(0,Math.min(255,((n>>8)&255)+amt)), b=Math.max(0,Math.min(255,(n&255)+amt));
