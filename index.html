@@ -1788,7 +1788,7 @@ function updateRace(dt){
       state.crossTimes[h.finishOrder]=state.raceTime;
       if(h.finishOrder===1){
         cap(`${h.lane}번 ${h.name}, 결승선 통과! 🏁`,`${laneNo(h.lane)} ${h.name} crosses the line! 🏁`);
-        speak(`And it's number ${h.lane}, ${h.name}, taking it at the wire!`,{rate:1.34,pitch:1.02});
+        speak(`And it's number ${h.lane}${state.lang==='en'?', '+h.name:''}, taking it at the wire!`,{rate:1.34,pitch:1.02});
         state.flash=0.75;
         crowdSet(1.0,0.25);             /* 골인 순간 함성 폭발 */
         crowdCheer(0.95);               /* 큰 환호 원샷 */
@@ -2524,7 +2524,7 @@ function photoLoop(){
       const medalKo=['🥇 1착','🥈 2착','🥉 3착'][P.nextCross-1];
       const medalEn=['🥇 1st','🥈 2nd','🥉 3rd'][P.nextCross-1];
       cap(`${medalKo} 확정 — ${h.lane}번 ${h.name}`,`${medalEn} — ${laneNo(h.lane)} ${h.name}`);
-      speak(P.nextCross===1? `First across the line, number ${h.lane}, ${h.name}!`
+      speak(P.nextCross===1? `First across the line, number ${h.lane}${state.lang==='en'?', '+h.name:''}!`
            :P.nextCross===2? `Second place, number ${h.lane}.`
            :`And third, number ${h.lane}. What a race, folks!`,
            {rate:P.nextCross===1?1.3:1.12, pitch:P.nextCross===1?1.0:0.9});
