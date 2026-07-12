@@ -1195,43 +1195,78 @@ function drawParkedHorses(){
 }
 
 /* 낙마한 말: 쓰러진 자세 + 튕겨나간 기수 + 흙먼지, s=스케일 */
+/* 번쩍이는 경광등 (빨강↔파랑 교차, 발광) */
+function drawBeacon(g,x,y,scale){
+  scale=scale||1;
+  const on=Math.sin(state.raceTime*11)>-0.1;                 /* 깜빡임 */
+  const col=(Math.floor(state.raceTime*3.2)%2===0)?'#ff2f2f':'#2f6bff';  /* 색 교차 */
+  g.save(); g.translate(x,y); g.scale(scale,scale);
+  /* 지지대 + 받침 */
+  g.strokeStyle='#2b2b2b'; g.lineWidth=2.4; g.lineCap='round';
+  g.beginPath(); g.moveTo(0,13); g.lineTo(0,2); g.stroke();
+  g.fillStyle='#3a3a3a'; g.beginPath(); g.ellipse(0,13,5,2,0,0,7); g.fill();
+  /* 발광 후광 */
+  if(on){
+    const glow=g.createRadialGradient(0,-3,0,0,-3,14);
+    glow.addColorStop(0,col); glow.addColorStop(1,'rgba(0,0,0,0)');
+    g.globalAlpha=.75; g.fillStyle=glow; g.beginPath(); g.arc(0,-3,14,0,7); g.fill(); g.globalAlpha=1;
+    /* 반짝 광선 */
+    g.strokeStyle=col; g.lineWidth=1.4; g.globalAlpha=.9;
+    for(let k=0;k<4;k++){ const a=state.raceTime*6+k*Math.PI/2;
+      g.beginPath(); g.moveTo(Math.cos(a)*7,-3+Math.sin(a)*7); g.lineTo(Math.cos(a)*13,-3+Math.sin(a)*13); g.stroke(); }
+    g.globalAlpha=1;
+  }
+  /* 램프 돔 */
+  g.fillStyle=on?col:shade(col,-70);
+  g.beginPath(); g.arc(0,-3,5,0,7); g.fill();
+  g.strokeStyle='rgba(0,0,0,.45)'; g.lineWidth=1; g.stroke();
+  g.fillStyle='rgba(255,255,255,.6)'; g.beginPath(); g.arc(-1.5,-4.5,1.4,0,7); g.fill();  /* 하이라이트 */
+  g.restore();
+}
+
 function drawFallenSprite(g,h,p,ang,s){
   const since=state.raceTime-h.fallT;
   const tip=Math.min(1,since*2.2);   /* 0→1 넘어지는 정도 */
+  const coat=h.coat, dark=shade(coat,-38), lite=shade(coat,26);
   g.save(); g.translate(p.x,p.y);
   /* 먼지 구름 */
   g.globalAlpha=Math.max(0,0.5-since*0.12); g.fillStyle='#b89a72';
   for(let i=0;i<7;i++){ const a=i*0.9; g.beginPath();
     g.arc(Math.cos(a)*(8+since*10),8+Math.sin(a)*5,5+since*4+i,0,7); g.fill(); }
   g.globalAlpha=1;
+  /* ---- 쓰러진 말 (털색 유지, 발버둥) ---- */
+  g.save();
   g.rotate(ang);
   if(Math.cos(ang)<0) g.scale(1,-1);
-  g.rotate(tip*1.5);                 /* 옆으로 쓰러짐 */
+  g.rotate(tip*1.4);                 /* 옆으로 쓰러짐 */
   g.scale(s,s);
-  /* 몸통(쓰러진) */
-  g.fillStyle=h.coat;
-  g.beginPath(); g.ellipse(0,6,26,12,0,0,7); g.fill();
-  g.strokeStyle='rgba(0,0,0,.25)'; g.lineWidth=1.4;
-  /* 허우적대는 다리 */
-  g.strokeStyle=shade(h.coat,-40); g.lineWidth=3.5; g.lineCap='round';
-  for(let i=0;i<4;i++){ const fx=-12+i*8, kick=Math.sin(state.raceTime*12+i*1.7)*6;
-    g.beginPath(); g.moveTo(fx,0); g.lineTo(fx+kick,-14-Math.abs(kick)); g.stroke(); }
+  /* 허우적대는 다리 (몸통 뒤) */
+  g.strokeStyle=dark; g.lineWidth=4; g.lineCap='round';
+  for(let i=0;i<4;i++){ const fx=-13+i*9, kick=Math.sin(state.raceTime*13+i*1.7)*7;
+    g.beginPath(); g.moveTo(fx,3); g.lineTo(fx+kick*0.5,-15-Math.abs(kick)); g.stroke();
+    g.fillStyle='#1a120b'; g.beginPath(); g.arc(fx+kick*0.5,-15-Math.abs(kick),2,0,7); g.fill(); }
+  /* 몸통 (털색) */
+  g.fillStyle=coat;
+  g.beginPath(); g.ellipse(0,4,25,12,0,0,7); g.fill();
+  g.globalAlpha=.25; g.fillStyle=lite;
+  g.beginPath(); g.ellipse(-8,0,12,7,0,0,7); g.fill(); g.globalAlpha=1;
+  /* 목/갈기 */
+  g.fillStyle=coat; g.beginPath(); g.ellipse(19,0,8,5,0.5,0,7); g.fill();
+  g.fillStyle=dark; g.beginPath(); g.ellipse(14,-3,6,3,0.6,0,7); g.fill();
   /* 머리 */
-  g.fillStyle=h.coat; g.beginPath(); g.ellipse(-26,2,9,5,0.4,0,7); g.fill();
+  g.fillStyle=coat; g.beginPath(); g.ellipse(25,4,9,5,0.35,0,7); g.fill();
+  g.fillStyle=dark; g.beginPath(); g.moveTo(21,0); g.lineTo(20,-6); g.lineTo(24,0); g.closePath(); g.fill(); /* 귀 */
+  g.fillStyle='#120c08'; g.beginPath(); g.arc(25,2,1.1,0,7); g.fill(); /* 눈 */
   g.restore();
-  /* 튕겨나간 기수 (앞쪽으로 구름) */
-  const jd=Math.min(30,since*45);
-  const jp=pointAt(h.dist+jd*1.2,h.off);
-  g.save(); g.translate(jp.x,jp.y-2); g.rotate(since*7);
-  g.fillStyle=h.color; g.beginPath(); g.ellipse(0,0,5,3.5,0,0,7); g.fill();
-  g.fillStyle='#e0bc96'; g.beginPath(); g.arc(3,-2,2.4,0,7); g.fill();
-  g.restore();
-  /* 번호 배지(경고색) */
-  g.save(); g.translate(p.x,p.y-22);
-  g.fillStyle=h.retired?'#8a8a8a':'#d63a2e'; g.strokeStyle='#fff'; g.lineWidth=1.4;
+  /* ---- 마번 배지 (실크색, 화면 정렬) ---- */
+  g.save(); g.translate(0,-24);
+  g.fillStyle=h.color; g.strokeStyle='#fff'; g.lineWidth=1.5;
   g.beginPath(); g.arc(0,0,9,0,7); g.fill(); g.stroke();
   g.fillStyle='#fff'; g.font='bold 11px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-  g.fillText(h.retired?'✖':h.lane,0,0.5);
+  g.fillText(h.lane,0,0.5);
+  g.restore();
+  /* ---- 번쩍이는 경광등 (기수 대신) ---- */
+  drawBeacon(g, 26, -12, 1);
   g.restore();
 }
 
@@ -2116,12 +2151,14 @@ function drawWideScene(g,w,hgt,dt){
         g.arc(Math.cos(a)*(14+since*14),12+Math.sin(a)*8,(7+since*6+i)*sc*0.5,0,7); g.fill(); }
       g.globalAlpha=1;
       g.rotate(tip*1.5); g.scale(sc*0.55,sc*0.55);
-      g.fillStyle=h.coat; g.beginPath(); g.ellipse(0,6,26,12,0,0,7); g.fill();
-      g.strokeStyle=shade(h.coat,-40); g.lineWidth=3.5; g.lineCap='round';
-      for(let i=0;i<4;i++){ const fx=-12+i*8, kick=Math.sin(state.raceTime*12+i*1.7)*6;
-        g.beginPath(); g.moveTo(fx,0); g.lineTo(fx+kick,-14-Math.abs(kick)); g.stroke(); }
-      g.fillStyle=h.coat; g.beginPath(); g.ellipse(-26,2,9,5,0.4,0,7); g.fill();
+      g.strokeStyle=shade(h.coat,-40); g.lineWidth=3.8; g.lineCap='round';
+      for(let i=0;i<4;i++){ const fx=-13+i*9, kick=Math.sin(state.raceTime*13+i*1.7)*7;
+        g.beginPath(); g.moveTo(fx,3); g.lineTo(fx+kick*0.5,-15-Math.abs(kick)); g.stroke(); }
+      g.fillStyle=h.coat; g.beginPath(); g.ellipse(0,4,26,12,0,0,7); g.fill();
+      g.fillStyle=h.coat; g.beginPath(); g.ellipse(25,2,9,5,0.35,0,7); g.fill();  /* 머리 */
+      g.fillStyle=shade(h.coat,-38); g.beginPath(); g.moveTo(21,-2); g.lineTo(20,-8); g.lineTo(24,-2); g.closePath(); g.fill();
       g.restore();
+      drawBeacon(g, x+22*sc*0.5, y-14*sc*0.5, sc*0.55);   /* 번쩍이는 경광등 */
     } else {
       /* 모션 블러 잔상 */
       if(running){
