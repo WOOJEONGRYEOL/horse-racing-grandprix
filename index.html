@@ -1160,44 +1160,36 @@ function drawHorseOnTrack(h,running=true){
 
 /* 완주 후 퇴장한 말들을 인필드 중앙에 착순대로 정렬 표시 */
 /* 사진판독으로 확정된 1·2·3위(state.confirmed 명)를 트랙 중앙에 순차 표시 */
+/* 사진판독으로 확정된 순위를 작은 텍스트 박스로 표시 (포디움·말그림 없이 1st/2nd/3rd만).
+   하단 트랙의 말 번호를 가리지 않도록 인필드 위쪽에 작게 배치. */
 function drawParkedHorses(){
   const c=state.confirmed||0; if(c<=0 || !state.finalOrder) return;
   const top=state.finalOrder.slice(0,c);
   if(!top.length) return;
   const cx=track.cx, cy=track.cy;
-  const cellW=Math.max(84, Math.min(150, track.a*0.55));
-  const boxW=Math.min(track.a*1.85, top.length*cellW+24), boxH=110;
+  const ORD=['1st','2nd','3rd'], MED=['🥇','🥈','🥉'], COL=['#f4c430','#c9c9c9','#cd7f32'];
+  const rowH=20, padX=12, padTop=6, padBot=6;
   ctx.save();
-  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle='rgba(4,16,9,.62)';
-  ctx.beginPath(); ctx.roundRect(cx-boxW/2,cy-boxH/2,boxW,boxH,10); ctx.fill();
-  ctx.strokeStyle='rgba(244,196,48,.45)'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.fillStyle='#f4c430'; ctx.font='bold 11px sans-serif';
-  ctx.fillText(state.lang==='en'?'PHOTO FINISH — TOP 3':'결승 · 1·2·3위',cx,cy-boxH/2+15);
-  const gap=(boxW-24)/top.length;
-  const startX=cx-(top.length-1)*gap/2;
-  top.forEach((h,i)=>{
-    const x=startX+i*gap, y=cy+26;
-    /* 시상 단 */
-    const blockH=[26,17,11][h.finishOrder-1]||10;
-    ctx.fillStyle=['#f4c430','#c9c9c9','#cd7f32'][h.finishOrder-1];
-    ctx.fillRect(x-22,y+6,44,blockH);
-    ctx.save(); ctx.translate(x,y);
-    ctx.globalAlpha=.28; ctx.fillStyle='#000';
-    ctx.beginPath(); ctx.ellipse(1,6,15,3.5,0,0,7); ctx.fill(); ctx.globalAlpha=1;
-    drawHorseSprite(ctx,h,0.36,0.24,{running:false});
-    ctx.restore();
-    /* 메달 배지 */
-    ctx.fillStyle=['#f4c430','#c9c9c9','#cd7f32'][h.finishOrder-1];
-    ctx.beginPath(); ctx.arc(x,y-30,9,0,7); ctx.fill();
-    ctx.fillStyle='#0a2c19'; ctx.font='bold 11px sans-serif'; ctx.textBaseline='middle';
-    ctx.fillText(['🥇','🥈','🥉'][h.finishOrder-1],x,y-29.5);
-    /* 마번·이름 */
-    ctx.textBaseline='alphabetic'; ctx.font='bold 10px sans-serif';
+  ctx.font='bold 13px sans-serif';
+  let maxW=0;
+  const rows=top.map(h=>{
+    const label=`${ORD[h.finishOrder-1]}   ${h.lane}. ${h.name}`;
+    maxW=Math.max(maxW, ctx.measureText(label).width);
+    return {h,label};
+  });
+  const boxW=Math.min(track.a*1.6, maxW+padX*2+16);
+  const boxH=padTop+padBot+rows.length*rowH;
+  const bx=cx-boxW/2, byBottom=cy-6, by=byBottom-boxH;   /* 바닥이 중앙선 위에 오도록 → 하단 말 안 가림 */
+  ctx.fillStyle='rgba(4,16,9,.72)';
+  ctx.beginPath(); ctx.roundRect(bx,by,boxW,boxH,8); ctx.fill();
+  ctx.strokeStyle='rgba(244,196,48,.5)'; ctx.lineWidth=1.4; ctx.stroke();
+  ctx.textBaseline='middle'; ctx.textAlign='left';
+  rows.forEach((r,i)=>{
+    const yy=by+padTop+rowH*i+rowH/2;
+    ctx.font='bold 13px sans-serif'; ctx.fillStyle=COL[r.h.finishOrder-1];
+    ctx.fillText(MED[r.h.finishOrder-1]+' '+ORD[r.h.finishOrder-1], bx+padX, yy);
     ctx.fillStyle='#eafff0';
-    let nm=h.name; const maxW=gap-10;
-    if(ctx.measureText(nm).width>maxW){ while(nm.length>3 && ctx.measureText(nm+'…').width>maxW) nm=nm.slice(0,-1); nm+='…'; }
-    ctx.fillText(`${h.lane}. ${nm}`,x,y+30);
+    ctx.fillText(`${r.h.lane}. ${r.h.name}`, bx+padX+58, yy);
   });
   ctx.restore();
 }
@@ -1699,7 +1691,12 @@ function updateRace(dt){
 
   /* ----- 코스 취하기: 레일 파고들기 + 추월 ----- */
   hs.forEach(h=>{
-    if(h.finished){ h.off+=clamp(0.55-h.off,-dt*0.6,dt*0.6); return; }
+    if(h.finished){
+      /* 완주마는 착순 순서대로 안쪽(레일)→바깥쪽으로 줄지어 서도록 레인 배정 (겹침 방지) */
+      const targetOff=clamp(0.6+(h.finishOrder-1)*1.0, 0.4, N-0.4);
+      h.off+=clamp(targetOff-h.off, -dt*1.2, dt*1.2);
+      return;
+    }
     let targetOff=0.45;                      /* 기본: 최단 코스 */
     let blocker=null;
     hs.forEach(o=>{
@@ -1761,7 +1758,9 @@ function updateRace(dt){
       const cruise=base*h.strength*0.7;
       h.spd+=(cruise-h.spd)*Math.min(1,dt*1.5);
       h.dist+=h.spd*dt*arcFactor(h.dist,h.off);
-      if(h.dist>=state.parkGate){ h.dist=state.parkGate; h.parked=true; h.spd=0; }  /* 게이트에서 멈춤 */
+      /* 착순대로 살짝 앞뒤 계단식으로 멈춰(안쪽=선두=가장 앞) 서로 겹치지 않게 */
+      const stopDist=state.parkGate-(h.finishOrder-1)*20;
+      if(h.dist>=stopDist){ h.dist=stopDist; h.parked=true; h.spd=0; }
       return;
     }
     const prog=h.dist/state.finishDist;
