@@ -2222,13 +2222,25 @@ function drawWideScene(g,w,hgt,dt){
   g.globalAlpha=1;
 }
 
+/* 샷 라벨을 현재 언어로 해석 (tv.mode 기준) */
+function tvLabel(){
+  const L={
+    lead:   ['리딩 그룹','Leading Group'],
+    battle: ['접전!','Neck & Neck!'],
+    pack:   ['중위권 다툼','The Chasing Pack'],
+    finish: ['골인!','At the Wire!'],
+    stretch:['직선주로 스퍼트!','Final Stretch!'],
+    photo:  ['사진 판독','Photo Finish'],
+  }[state.tv.mode] || ['리딩 그룹','Leading Group'];
+  return state.lang==='en'? L[1] : L[0];
+}
 function drawBroadcastOverlay(g,w,hgt,dt,fxDt){
   const tv=state.tv;
   /* 상단 좌: 샷 라벨 */
   g.fillStyle='rgba(6,10,8,.78)';
   g.beginPath(); g.roundRect(12,10,168,28,6); g.fill();
   g.fillStyle='#f4c430'; g.font='bold 14px sans-serif'; g.textAlign='left'; g.textBaseline='middle';
-  g.fillText('📷 '+tv.label,22,24);
+  g.fillText('📷 '+tvLabel(),22,24);
   /* 상단 우: LIVE */
   g.fillStyle='rgba(6,10,8,.78)';
   g.beginPath(); g.roundRect(w-84,10,72,26,6); g.fill();
