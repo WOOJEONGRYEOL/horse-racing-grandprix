@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>경마 그랑프리 🏇</title>
+<meta name="description" content="레트로 아케이드 경마 베팅 게임. 배당률을 보고 마권을 사고, 실시간 중계와 사진판독까지 — 1인/2인 무료 웹게임. Retro horse racing betting game with live broadcast & photo finish.">
+<meta property="og:title" content="경마 그랑프리 — Grand Turf Racing">
+<meta property="og:description" content="배당률 보고 베팅, 실시간 중계, 사진판독까지. 무료 웹 경마 게임 (한국어/English)">
+<meta property="og:image" content="https://woojeongryeol.github.io/horse-racing-grandprix/hero.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://woojeongryeol.github.io/horse-racing-grandprix/">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   :root{
     --felt:#0b5d2e; --felt2:#0a4e28; --gold:#f4c430;
@@ -309,6 +316,7 @@
         <button class="btn alt" id="tP2" onclick="startGame(2)">2인 대전</button>
       </div>
       <p class="hint" id="tStartHint">시작 자금: 각 플레이어 1,000 코인 · 마우스/터치로 즐기세요</p>
+      <div id="supportSlot"></div>
     </div>
   </section>
 
@@ -442,6 +450,43 @@ function raceName(){ return state.lang==='en'? state.raceType.en : state.raceTyp
 /* "N번" / "#N" 언어별 마번 표기 */
 function laneNo(n){ return state.lang==='en'? '#'+n : n+'번'; }
 const START_MONEY = 1000;
+
+/* ============================ 수익화 설정 ============================
+   아래 값만 채우면 활성화된다 (비워두면 게임에 아무것도 표시되지 않음).
+   - adsenseClient: Google AdSense 게시자 ID (예: 'ca-pub-1234567890123456')
+   - adSlot:        AdSense 디스플레이 광고 단위의 슬롯 ID
+   - supportUrl:    후원 페이지 주소 (예: 'https://ko-fi.com/내아이디' / Buy Me a Coffee)
+   자세한 진행 방법은 저장소의 MONETIZE.md 참고. */
+const MONETIZE={
+  adsenseClient:'',
+  adSlot:'',
+  supportUrl:'',
+};
+let adsLoaded=false;
+function initAds(){
+  if(!MONETIZE.adsenseClient || adsLoaded) return;
+  adsLoaded=true;
+  const s=document.createElement('script');
+  s.async=true;
+  s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+MONETIZE.adsenseClient;
+  s.crossOrigin='anonymous';
+  document.head.appendChild(s);
+}
+function adBlockHTML(){
+  if(!MONETIZE.adsenseClient || !MONETIZE.adSlot) return '';
+  return `<div style="margin-top:10px"><ins class="adsbygoogle" style="display:block"
+    data-ad-client="${MONETIZE.adsenseClient}" data-ad-slot="${MONETIZE.adSlot}"
+    data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
+}
+function pushAd(){
+  if(!MONETIZE.adsenseClient || !MONETIZE.adSlot) return;
+  try{ (window.adsbygoogle=window.adsbygoogle||[]).push({}); }catch(e){}
+}
+function supportBtnHTML(){
+  if(!MONETIZE.supportUrl) return '';
+  return `<a class="chip" style="text-decoration:none" href="${MONETIZE.supportUrl}" target="_blank" rel="noopener">☕ ${state.lang==='en'?'Support the dev':'개발자 후원'}</a>`;
+}
+window.addEventListener('load',initAds);
 const PXD = 0.85;      /* TV: 트랙거리 → 화면픽셀 배율 */
 const NOSE = 24;       /* 말 코끝이 기준점보다 앞서는 거리(사진판독 기준) */
 
@@ -501,6 +546,7 @@ function applyStartTexts(){
   set('tSubtitle',t('subtitle')); set('tTitle',t('title'));
   set('tP1',t('p1')); set('tP2',t('p2')); set('tStartHint',t('startHint'));
   document.documentElement.lang=state.lang;
+  const ss=document.getElementById('supportSlot'); if(ss) ss.innerHTML=supportBtnHTML();
 }
 try{ const sv=localStorage.getItem('turf_lang'); if(sv) state.lang=sv; }catch(e){}
 window.addEventListener('load',applyStartTexts);
@@ -2699,7 +2745,7 @@ function finishRace(){
   } else {
     html+=`<div class="row" style="margin-top:8px">
         <button class="btn" onclick="nextRace()">${t('nextRace')}</button>
-        <button class="btn ghost" onclick="show('screen-start')">${t('toMain')}</button></div>`;
+        <button class="btn ghost" onclick="show('screen-start')">${t('toMain')}</button>${supportBtnHTML()}</div>`;
   }
   /* 2) 명예의 전당 (메뉴 아래, 1인 플레이 전용) */
   if(state.players===1){
@@ -2710,8 +2756,10 @@ function finishRace(){
       <div style="font-weight:800;color:var(--gold);margin-top:4px">${t('leaderboard')}</div>
       <div class="lb" id="lbBox"></div>`;
   }
+  html+=adBlockHTML();   /* 레이스 사이 광고 (설정 시에만 표시) */
   panel.innerHTML=html;
   show('screen-result');
+  pushAd();
   /* 포디엄·착순 미니 말 초상 렌더 */
   panel.querySelectorAll('.podHorse').forEach(cv=>{
     const h=state.horses.find(x=>x.lane===+cv.dataset.lane); renderResultHorse(cv,h,1.15);
